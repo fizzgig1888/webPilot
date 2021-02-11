@@ -1,0 +1,39 @@
+Pour l'instant la doc fournie ici donne les bonnes dépendances pour utiliser les biblio gtk python
+https://pygobject.readthedocs.io/en/latest/getting_started.html
+Evidemment ce sont les dépendances ubuntu.
+
+Installation du paquet capesos-lamp-config.
+La vérification montre que les serveur apache et mariadb sont bien lancés après ouverture de la session.
+
+Commencer le dév de webPilot.
+Pourquoi ne pas en profiter pour chercher des plugins Python pour atom.
+
+
+Builder :
+apm install busy-signal build build-python french-menu file-icons
+
+
+Linters :
+apm install intentions linter-ui-default@2.4.1 linter python-linters (un peu exigeant comme linters !!)
+sudo equo i dev-python/pip
+python3 -m pip install --user -U flake8 pylint mypy pydocstyle (installation en tant qu'utilisateur pour le moment)
+De la grogne pendant l'installation car :   WARNING: The script pyflakes is installed in '/home/raphael/.local/bin' which is not on PATH.
+Mais ça a l'air fonctionnel.
+
+
+Autocomplete :
+python3 -m pip install --user -U jedi
+apm install autocomplete-python
+
+Remarque : L'installation d'autocomplete-python me suggère d'installer kite. Un autocompléteur qui utilise du machine learning.
+Avec jedi, tout à fait non fonctionnel.
+Avec kite, a l'air ok, mais est-ce pérenne ?
+
+/home/raphael/.local/lib/python3.7/site-packages/ A ajouter comme PATH pour le plugin autocomplete-python, sinon chie dans la colle ?
+
+
+Le tout : 
+apm install busy-signal build build-python french-menu file-icons intentions linter-ui-default@2.4.1 linter python-linters autocomplete-python
+
+
+Je crois que je vais rebasculer sur un autre IDE ...

@@ -1,7 +1,8 @@
 #!/bin/bash
 
 test(){
-    (service apache2 restart) &
+    status=$(systemctl status apache2)
+    echo $status
 }
 
 test

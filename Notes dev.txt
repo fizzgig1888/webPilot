@@ -19,6 +19,7 @@ sudo equo i dev-python/pip
 python3 -m pip install --user -U flake8 pylint mypy pydocstyle (installation en tant qu'utilisateur pour le moment)
 De la grogne pendant l'installation car :   WARNING: The script pyflakes is installed in '/home/raphael/.local/bin' which is not on PATH.
 Mais ça a l'air fonctionnel.
+A noter que l'abus de linters rend le truc lent. Tout désactiver sauf flake8 dans la config du plugin python-linters d'atom.
 
 
 Autocomplete :

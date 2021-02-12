@@ -2,34 +2,32 @@
 
 # Notes importantes : la transmission de valeurs de retours via un un variable=$(function) avec function qui renvoie qqchose via echo neutralise la poursuite du script
 # En fait le script s'attend à ce que le subshell termine pour passer à l'affectation de variable
-# Il va donc falloir adopter deux stratégies de programmation. Une pour lancer / stopper les serveurs dans récupération d'information. L'autre pour contrôler l'état des serveurs
+# Il va donc falloir adopter deux stratégies de programmation. Une pour lancer / stopper les serveurs sans récupération d'information. L'autre pour contrôler l'état des serveurs
 # avec transmission d'information.
 # TO BE CONTINUED. ....
-
-
 
 
 available_servers=("apache" "mariadb" "nodejs" "flask")
 available_commands=("start" "stop" "restart" "status" "test")
 
 apache_start(){
-    service apache2 start &
+    systemctl start apache2 &
 }
 
-apache_stop(){ 
-    service apache2 stop &
+apache_stop(){
+    systemctl stop apache2  &
 }
 
 apache_test(){
-    service apache2 restart &
+    systemctl restart apache2 &
 }
 
 apache_status(){
-    status=$(service apache2 status)
-    if [[ $status =~ "not" ]]; then
-        echo "stopped"
-    elif [[ $status =~ "running" ]]; then
+    status=$(systemctl status apache2)
+    if [[ $status =~ "Active: active" ]]; then
         echo "started"
+    elif [[ $status =~ "Active: inactive (dead)" ]]; then
+        echo "stopped"
     else
         echo "another status : $status"
     fi
@@ -56,7 +54,7 @@ check_args(){
 
 main(){
     check_args $@
-    to_do $@
+    echo $(to_do $@)
 }
 
 main $@

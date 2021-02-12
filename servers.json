@@ -1,0 +1,36 @@
+{
+  "servers": [
+    {
+      "shortname" : "apache",
+      "name" : "Serveur web apache",
+      "icon_loc" : "/svg/apache.svg",
+      "start_command" : "systemctl start apache2",
+      "stop_command" : "systemctl stop apache2",
+      "status_command" : "systemctl status apache2"
+    },
+    {
+      "shortname" : "mariadb",
+      "name" : "Serveur de BDD MariaDB",
+      "icon_loc" : "/svg/mariadb.svg",
+      "start_command" : "systemctl start mariadb",
+      "stop_command" : "systemctl stop mariadb",
+      "status_command" : "systemctl status mariadb"
+    },
+    {
+      "shortname" : "nodejs",
+      "name" : "API NodeJS",
+      "icon_loc" : "/svg/nodejs.svg",
+      "start_command" : "",
+      "stop_command" : "",
+      "status_command" : ""
+    },
+    {
+      "shortname" : "flask",
+      "name" : "API Flask",
+      "icon_loc" : "/svg/flask.svg",
+      "start_command" : "",
+      "stop_command" : "",
+      "status_command" : ""
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name" : "Serveur de BDD MariaDB",
+  "icon_loc" : "icons/mariadb.svg",
+  "start_command" : "systemctl start mariadb",
+  "stop_command" : "systemctl stop mariadb",
+  "status_command" : "systemctl status mariadb 1>/dev/null"
+}

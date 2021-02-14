@@ -1,0 +1,7 @@
+{
+  "name" : "API Flask",
+  "icon_loc" : "icons/flask.svg",
+  "start_command" : "systemctl start flask-api",
+  "stop_command" : "systemctl stop flask-api",
+  "status_command" : "systemctl status flask-api 1>/dev/null"
+}

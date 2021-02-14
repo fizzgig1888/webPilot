@@ -4,34 +4,44 @@ from gi.repository import Gtk, GdkPixbuf
 import os
 import json
 
-# Question à se poser : peut-on laisser tourner un serveur en arrière plan, qui ne soit pas référencé sur systemctl ?
-# La réponse est oui, mais il risque d'y avoir tout un tas de problématiques.
-# Il vaut surement mieux créer des fichiers de conf à ajouter à systemd, pour démarrer le truc.
-# Anticiper la gestion concurentielle des serveurs.
-# Modifier le paquet de gestion des serveurs pour reconstuire les fichiers depuis un backup.
+# Anticiper la gestion concurentielle des serveurs
+# --> Gestion du port dans JSON
+# Modifier le paquet de gestion des serveurs pour reconstuire les fichiers
+# depuis un backup.
+
+serverdir = "/home/raphael/Sabayon/git/webPilot/servers"
+
 
 class server(Gtk.Box):
-    def __init__(self, defs):
+    def __init__(self, path, data):
+        self.carac = data
         Gtk.Box.__init__(self, spacing=8)
-        pixbuf = self.svg2pixbuf(defs["icon_loc"])
+        pixbuf = self.svg2pixbuf(os.path.join(path, self.carac["icon_loc"]))
         gtklab = Gtk.Label()
-        gtklab.set_markup("<b>" + defs["name"] + "</b>")
+        gtklab.set_markup("<b>" + self.carac["name"] + "</b>")
         self.pack_start(pixbuf, False, False, 0)
         self.pack_start(gtklab, False, False, 0)
         self.cursor_state = Gtk.Switch()
         self.cursor_state.connect("notify::active", self.test)
+        self.cursor_state.set_active(self.isserverrunning())
         self.pack_start(self.cursor_state, False, False, 0)
 
     def svg2pixbuf(self, loc):
         width = 24
         height = -1
         preserve_aspect_ratio = True
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(os.path.dirname(__file__) + loc, width, height, preserve_aspect_ratio)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(loc, width, height,
+                                                         preserve_aspect_ratio)
         image = Gtk.Image()
         image.set_from_pixbuf(pixbuf)
         return image
 
+    def isserverrunning(self):
+        systemctlstatus = os.system(self.carac["status_command"])
+        return (systemctlstatus == 0)
+
     def test(self, switch, gparam):
+        print(self.isserverrunning())
         if switch.get_active():
             state = "on"
         else:
@@ -46,15 +56,17 @@ class webPilot(Gtk.Window):
         Gtk.Window.__init__(self, title="WebPilot", border_width=10)
         self.grille = Gtk.Grid(row_spacing=8, column_spacing=10)
         self.add(self.grille)
-        self.populate_servers("servers.json")
+        self.populate_servers(serverdir)
         self.addstuff()
 
     def populate_servers(self, json_path):
-        with open(json_path) as json_file:
-            data = json.load(json_file)
-            for elt in data['servers']:
-                self.grille.attach(server(elt), 0, self.line, 2, 1)
-                self.line += 1
+        for diritem in os.scandir(json_path):
+            if (diritem.path.endswith(".json") and diritem.is_file()):
+                with open(diritem.path) as json_data:
+                    data = json.load(json_data)
+                    self.grille.attach(server(json_path, data), 0,
+                                       self.line, 2, 1)
+                    self.line += 1
 
     def addstuff(self):
         self.pb = Gtk.ProgressBar()

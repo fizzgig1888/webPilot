@@ -1,0 +1,7 @@
+{
+  "name" : "API NodeJS",
+  "icon_loc" : "icons/nodejs.svg",
+  "start_command" : "systemctl start nodejs-api",
+  "stop_command" : "systemctl stop nodejs-api",
+  "status_command" : "systemctl status nodejs-api 1>/dev/null"
+}

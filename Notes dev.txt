@@ -1,3 +1,5 @@
+#### Information Python Gtk
+
 Pour l'instant la doc fournie ici donne les bonnes dépendances pour utiliser les biblio gtk python
 https://pygobject.readthedocs.io/en/latest/getting_started.html
 Evidemment ce sont les dépendances ubuntu.
@@ -5,9 +7,7 @@ Evidemment ce sont les dépendances ubuntu.
 Installation du paquet capesos-lamp-config.
 La vérification montre que les serveur apache et mariadb sont bien lancés après ouverture de la session.
 
-Commencer le dév de webPilot.
-Pourquoi ne pas en profiter pour chercher des plugins Python pour atom.
-
+### Plugins atom Python
 
 Builder :
 apm install busy-signal build build-python french-menu file-icons
@@ -36,5 +36,12 @@ Avec kite, a l'air ok, mais est-ce pérenne ?
 Le tout : 
 apm install busy-signal build build-python french-menu file-icons intentions linter-ui-default@2.4.1 linter python-linters autocomplete-python
 
+### pystemd
+Dispo sur git
+Ecrire un ebuild qui produit le paquet.
+Pour installation : récupérer l'archive + sudo python3 setup.py install
+Quid du comportement en environnement sandboxé ?
+Eventuellement faire une archive avec le résultat. Checher les dépendances dans setup.py ?
 
-Je crois que je vais rebasculer sur un autre IDE ...
+### Idées :
+- Passer l'adresse des fichiers d'API en variable d'environnement et rédiger les fichiers .service en conséquence

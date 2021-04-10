@@ -1,7 +1,6 @@
 {
   "name" : "API Flask",
+  "service_name" : "flask-api.service",
   "icon_loc" : "icons/flask.svg",
-  "start_command" : "systemctl start flask-api",
-  "stop_command" : "systemctl stop flask-api",
-  "status_command" : "systemctl status flask-api 1>/dev/null"
+  "port" : 8081
 }

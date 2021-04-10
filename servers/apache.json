@@ -1,7 +1,6 @@
 {
   "name" : "Serveur web apache",
+  "service_name" : "apache2.service",
   "icon_loc" : "icons/apache.svg",
-  "start_command" : "systemctl start apache2",
-  "stop_command" : "systemctl stop apache2",
-  "status_command" : "systemctl status apache2 1>/dev/null"
+  "port" : 80
 }

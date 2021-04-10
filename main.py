@@ -1,20 +1,35 @@
+from pystemd.systemd1 import Unit
+from pystemd.systemd1 import Manager
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GdkPixbuf
+from gi.repository import Gtk, GdkPixbuf, GLib
 import os
 import json
+import time
+import threading
 
-# Anticiper la gestion concurentielle des serveurs
-# --> Gestion du port dans JSON
-# Modifier le paquet de gestion des serveurs pour reconstuire les fichiers
-# depuis un backup.
+# Démarrer les watchdog pour chaque service actif au démarrage.
+# Verrouiller les boutons le temps que chaque serveur démarre...
 
 serverdir = "/home/raphael/Sabayon/git/webPilot/servers"
-
+exiting = False
 
 class server(Gtk.Box):
-    def __init__(self, path, data):
+    events = "UI_only"
+    dog = False
+    startdelay = 10
+    stopdelay = 10
+    threshold = 0.2
+    dogdelay = 1
+    AskedState = b'inactive'
+    recordedPID = -1
+    recordedBtnState = False
+
+    def __init__(self, path, data, logbox):
         self.carac = data
+        self.logbox = logbox
+        self.unit = Unit(self.carac["service_name"], _autoload=True)
+        self.service = self.unit.Unit
         Gtk.Box.__init__(self, spacing=8)
         pixbuf = self.svg2pixbuf(os.path.join(path, self.carac["icon_loc"]))
         gtklab = Gtk.Label()
@@ -22,9 +37,86 @@ class server(Gtk.Box):
         self.pack_start(pixbuf, False, False, 0)
         self.pack_start(gtklab, False, False, 0)
         self.cursor_state = Gtk.Switch()
-        self.cursor_state.connect("notify::active", self.test)
-        self.cursor_state.set_active(self.isserverrunning())
+        self.cursor_state.connect("notify::active", self.changeserverstate)
+        self.cursor_state.set_active(self.service.ActiveState == b'active')
         self.pack_start(self.cursor_state, False, False, 0)
+        self.events = "Active"
+
+    def server_failed2run(self):
+        self.logbox.info("Arrêt inatendu de : " + self.carac["name"], 30)
+        self.events = "Inactive"
+        self.cursor_state.set_state(False)
+        self.events = "Active"
+
+    def server_failed2stop(self):
+        if self.service.ActiveState == b'active':
+            self.logbox.info("Erreur à l'arrêt de : " + self.carac["name"] + ".\nLe service est toujours actif !", 30)
+            self.AskedState = b'active'
+            renew_surveil = True
+            self.events = "UI_only"
+            self.cursor_state.set_state(True)
+        else:
+            self.logbox.info("Erreur à l'arrêt de : " + self.carac["name"] + "\nLe service est dans un état inconnu !", 30)
+        self.events = "Active"
+
+
+    def watchdog_surveil(self):
+        renew_surveil = True
+        while renew_surveil:
+            renew_surveil = False
+            while self.dog and self.service.ActiveState == self.AskedState: # A modifier pour que le deactivating et inactive concordent.
+                time.sleep(self.dogdelay)
+                print("watchdog actif")
+                if exiting or not self.dog:
+                    return
+            if self.service.ActiveState != b'active' and self.AskedState == b'active':
+                self.server_failed2run()
+#            elif self.AskedState == b'inactive' and self.service.ActiveState != b'inactive':
+#                self.server_failed2stop()
+
+
+    def start_server(self):
+        print("hello")
+        # penser à bloquer le curseur ...
+        self.AskedState = b'active'
+        self.service.Start(b'replace')
+        self.logbox.info("Tentative de démarrage de : " + self.carac["name"], self.startdelay)
+        i = 0
+        while i < self.startdelay/self.threshold and (self.service.ActiveState != b'active' or self.unit.MainPID != self.recordedPID or self.unit.MainPID == 0):
+            time.sleep(self.threshold)
+            self.recordedPID = self.unit.MainPID
+            i += 1
+        if self.service.ActiveState == b'active':
+            self.logbox.info("Démarrage réussi de : " + self.carac["name"], 1)
+            self.events = "Active"
+            self.dog = True
+            self.watchdog_surveil()
+        else:
+            self.logbox.info("Echec du démarrage de : " + self.carac["name"], 2)
+            self.dog = False
+            self.events = "UI_only"
+            self.cursor_state.set_active(False)
+            self.events = "Active"
+
+
+    def stop_server(self):
+        # penser à bloquer le curseur ...
+        self.AskedState = b'inactive'
+        self.dog = False
+        self.service.Stop(b'replace')
+        self.logbox.info("Tentative d'arrêt de : " + self.carac["name"], self.stopdelay)
+        i = 0
+        while i < self.stopdelay/self.threshold and (self.service.ActiveState == b'deactivating' or self.unit.MainPID != 0):
+            print("looping : " + str(self.service.ActiveState))
+            time.sleep(self.threshold)
+            i += 1
+        self.events = "UI_only"
+        if self.service.ActiveState == b'inactive':
+            self.logbox.info("Arrêt réussi de : " + self.carac["name"], 1)
+            self.events = "Active"
+        else:
+            self.server_failed2stop()
+        print("stop_server fini")
 
     def svg2pixbuf(self, loc):
         width = 24
@@ -36,25 +128,51 @@ class server(Gtk.Box):
         image.set_from_pixbuf(pixbuf)
         return image
 
-    def isserverrunning(self):
-        systemctlstatus = os.system(self.carac["status_command"])
-        return (systemctlstatus == 0)
+    def debugging(self):
+        print(self.service.ActiveState)
+        print(self.service.SubState)
+        print(self.unit.MainPID)
 
-    def test(self, switch, gparam):
-        print(self.isserverrunning())
+    def changeserverstate(self, switch, gparam):
+        if self.events == "Inactive":
+            switch.set_active(self.recordedBtnState)
+            print("locked")
+            return
+        elif self.events == "UI_only":
+            print("no effect")
+            return
+        self.recordedBtnState = switch.get_active()
+        self.events = "Inactive"
         if switch.get_active():
-            state = "on"
+            threading.Thread(target=self.start_server).start()
         else:
-            state = "off"
-        print("Switch was turned", state)
+            threading.Thread(target=self.stop_server).start()
 
+
+class logBox(Gtk.Label):
+    id = -1
+
+    def info(self, txt, delay):
+        None
+#        if self.id != -1:
+#            GLib.source_remove(self.id)
+#        self.set_text(txt)
+#        self.id = GLib.timeout_add_seconds(delay, self.clear)
+
+    def clear(self):
+        self.set_text("")
+        self.id = -1
 
 class webPilot(Gtk.Window):
-    line = 0
+    def defstuff(self):
+        self.line = 0
+        self.pb = Gtk.ProgressBar()
+        self.grille = Gtk.Grid(row_spacing=8, column_spacing=10)
+        self.logbox = logBox(label="Test")
 
     def __init__(self):
+        self.defstuff()
         Gtk.Window.__init__(self, title="WebPilot", border_width=10)
-        self.grille = Gtk.Grid(row_spacing=8, column_spacing=10)
         self.add(self.grille)
         self.populate_servers(serverdir)
         self.addstuff()
@@ -64,24 +182,26 @@ class webPilot(Gtk.Window):
             if (diritem.path.endswith(".json") and diritem.is_file()):
                 with open(diritem.path) as json_data:
                     data = json.load(json_data)
-                    self.grille.attach(server(json_path, data), 0,
-                                       self.line, 2, 1)
+                    self.grille.attach(server(json_path, data, self.logbox), 0, self.line, 2, 1)
                     self.line += 1
 
     def addstuff(self):
-        self.pb = Gtk.ProgressBar()
         self.grille.attach(self.pb, 0, self.line, 2, 1)
         self.line += 1
-        self.msg_info = Gtk.Label(label="Test")
-        self.grille.attach(self.msg_info, 0, self.line, 2, 1)
+        self.grille.attach(self.logbox, 0, self.line, 2, 1)
         self.line += 1
-        self.btn_test = Gtk.Button(label="Lancer")
-        self.grille.attach(self.btn_test, 0, self.line, 2, 1)
-        self.line += 1
+
+
+def close_with_threads(dummy):
+    global exiting
+    global win
+    exiting = True
+    win.destroy()
+    Gtk.main_quit()
 
 
 if __name__ == "__main__":
     win = webPilot()
-    win.connect("destroy", Gtk.main_quit)
+    win.connect("destroy", close_with_threads)
     win.show_all()
     Gtk.main()

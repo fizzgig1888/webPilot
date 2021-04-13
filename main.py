@@ -110,7 +110,6 @@ class server(Gtk.Box):
             time.sleep(self.threshold)
             self.recordedPID = self.unit.MainPID
             i += 1
-        # Modifier la condition ci-dessous.
         if self.service.ActiveState == b'active' and self.unit.MainPID == self.recordedPID and self.unit.MainPID != 0:
             self.logbox.info("Démarrage réussi de : " + self.carac["name"], 1)
             self.events = "Active"
@@ -124,7 +123,6 @@ class server(Gtk.Box):
             self.events = "Active"
 
     def stop_server(self):
-        # penser à bloquer le curseur ...
         self.AskedState = b'inactive'
         self.dog = False
         self.service.Stop(b'replace')

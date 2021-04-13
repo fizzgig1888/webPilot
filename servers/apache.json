@@ -1,6 +1,6 @@
 {
   "name" : "Serveur web Apache",
   "service_name" : "apache2.service",
-  "icon_loc" : "icons/apache.svg",
+  "icon_loc" : "apache.svg",
   "port" : 80
 }

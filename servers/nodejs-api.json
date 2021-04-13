@@ -1,6 +1,6 @@
 {
   "name" : "API NodeJS",
   "service_name" : "nodejs-api.service",
-  "icon_loc" : "icons/nodejs.svg",
+  "icon_loc" : "nodejs.svg",
   "port" : 8080
 }

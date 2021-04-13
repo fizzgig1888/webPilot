@@ -1,6 +1,6 @@
 {
   "name" : "API Flask",
   "service_name" : "flask-api.service",
-  "icon_loc" : "icons/flask.svg",
+  "icon_loc" : "flask.svg",
   "port" : 8081
 }

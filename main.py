@@ -10,8 +10,19 @@ import threading
 # Faire un peu de déco : logo EN. Virer barre ?
 # Régler le cas d'un service qui plante.
 
-serverdir = "/home/raphael/Sabayon/git/webPilot/servers"
+confdir = '/home/raphael/Sabayon/git/webPilot/servers'
+iconsdir = '/home/raphael/Sabayon/git/webPilot/icons'
 exiting = False
+
+def svg2pixbuf(loc):
+    width = 24
+    height = -1
+    preserve_aspect_ratio = True
+    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(loc, width, height,
+                                                     preserve_aspect_ratio)
+    image = Gtk.Image()
+    image.set_from_pixbuf(pixbuf)
+    return image
 
 
 class Services(Manager):
@@ -34,7 +45,7 @@ class Services(Manager):
 class server(Gtk.Box):
     events = "UI_only"
     dog = False
-    startdelay = 2.5
+    startdelay = 3
     stopdelay = 10
     threshold = 0.5
     dogdelay = 1
@@ -42,21 +53,21 @@ class server(Gtk.Box):
     recordedPID = -1
     recordedBtnState = False
 
-    def __init__(self, path, data, logbox):
+    def __init__(self, data, logbox):
         self.carac = data
         self.logbox = logbox
         self.unit = Unit(self.carac["service_name"], _autoload=True)
         self.service = self.unit.Unit
         serv.add_service([self.carac["service_name"]])
         Gtk.Box.__init__(self, spacing=8)
-        pixbuf = self.svg2pixbuf(os.path.join(path, self.carac["icon_loc"]))
+        pixbuf = svg2pixbuf(os.path.join(iconsdir, self.carac["icon_loc"]))
         gtklab = Gtk.Label()
         gtklab.set_markup("<b>" + self.carac["name"] + "</b>")
-        self.pack_start(pixbuf, False, False, 0)
-        self.pack_start(gtklab, False, False, 0)
         self.cursor_state = Gtk.Switch()
         self.cursor_state.connect("notify::active", self.changeserverstate)
         self.pack_start(self.cursor_state, False, False, 0)
+        self.pack_start(pixbuf, False, False, 0)
+        self.pack_start(gtklab, False, False, 0)
         self.server_check()
         self.events = "Active"
 
@@ -132,16 +143,6 @@ class server(Gtk.Box):
         else:
             self.server_failed2stop()
 
-    def svg2pixbuf(self, loc):
-        width = 24
-        height = -1
-        preserve_aspect_ratio = True
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(loc, width, height,
-                                                         preserve_aspect_ratio)
-        image = Gtk.Image()
-        image.set_from_pixbuf(pixbuf)
-        return image
-
     def changeserverstate(self, switch, gparam):
         if self.events == "Inactive":
             switch.set_active(self.recordedBtnState)
@@ -174,7 +175,6 @@ class logBox(Gtk.Label):
 class webPilot(Gtk.Window):
     def defstuff(self):
         self.line = 0
-        self.pb = Gtk.ProgressBar()
         self.grille = Gtk.Grid(row_spacing=8, column_spacing=10)
         self.logbox = logBox(label="Bienvenue dans webPilot!")
 
@@ -182,21 +182,21 @@ class webPilot(Gtk.Window):
         self.defstuff()
         Gtk.Window.__init__(self, title="webPilot", border_width=10)
         self.add(self.grille)
-        self.populate_servers(serverdir)
-        self.addstuff()
+        gi = Gtk.Label()
+        gi.set_text("truc")
+        self.grille.add(gi)
+        self.populate_servers(confdir)
 
     def populate_servers(self, json_path):
         for diritem in os.scandir(json_path):
             if (diritem.path.endswith(".json") and diritem.is_file()):
                 with open(diritem.path) as json_data:
                     data = json.load(json_data)
-                    self.grille.attach(server(json_path, data, self.logbox), 0, self.line, 2, 1)
+                    self.grille.attach(server(data, self.logbox), 1, self.line, 2, 1)
                     self.line += 1
 
     def addstuff(self):
-        self.grille.attach(self.pb, 0, self.line, 2, 1)
-        self.line += 1
-        self.grille.attach(self.logbox, 0, self.line, 2, 1)
+        self.grille.attach(self.logbox, 1, self.line, 2, 1)
         self.line += 1
 
 

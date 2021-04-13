@@ -1,6 +1,6 @@
 {
   "name" : "Serveur de BDD MariaDB",
   "service_name" : "mariadb.service",
-  "icon_loc" : "icons/mariadb.svg",
+  "icon_loc" : "mariadb.svg",
   "port" : 3306
 }

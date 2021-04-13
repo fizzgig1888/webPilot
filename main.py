@@ -1,5 +1,4 @@
-from pystemd.systemd1 import Unit
-from pystemd.systemd1 import Manager
+from pystemd.systemd1 import Unit, Manager
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GdkPixbuf, GLib
@@ -9,10 +8,28 @@ import time
 import threading
 
 # Démarrer les watchdog pour chaque service actif au démarrage.
-# Verrouiller les boutons le temps que chaque serveur démarre...
+#
 
 serverdir = "/home/raphael/Sabayon/git/webPilot/servers"
 exiting = False
+
+
+class Services(Manager):
+    lst = []
+
+    def __init__(self, *args, **kwargs):
+        Manager.__init__(self, *args, **kwargs)
+        self.load()
+
+    def add_service(self, service):
+        self.lst += service
+
+    def enable_services(self):
+        self.Manager.EnableUnitFiles(self.lst, False, True)
+
+    def disable_services(self):
+        self.Manager.DisableUnitFiles(self.lst, False)
+
 
 class server(Gtk.Box):
     events = "UI_only"
@@ -30,6 +47,7 @@ class server(Gtk.Box):
         self.logbox = logbox
         self.unit = Unit(self.carac["service_name"], _autoload=True)
         self.service = self.unit.Unit
+        serv.add_service([self.carac["service_name"]])
         Gtk.Box.__init__(self, spacing=8)
         pixbuf = self.svg2pixbuf(os.path.join(path, self.carac["icon_loc"]))
         gtklab = Gtk.Label()
@@ -59,7 +77,6 @@ class server(Gtk.Box):
             self.logbox.info("Erreur à l'arrêt de : " + self.carac["name"] + "\nLe service est dans un état inconnu !", 30)
         self.events = "Active"
 
-
     def watchdog_surveil(self):
         renew_surveil = True
         while renew_surveil:
@@ -74,10 +91,8 @@ class server(Gtk.Box):
 #            elif self.AskedState == b'inactive' and self.service.ActiveState != b'inactive':
 #                self.server_failed2stop()
 
-
     def start_server(self):
         print("hello")
-        # penser à bloquer le curseur ...
         self.AskedState = b'active'
         self.service.Start(b'replace')
         self.logbox.info("Tentative de démarrage de : " + self.carac["name"], self.startdelay)
@@ -97,7 +112,6 @@ class server(Gtk.Box):
             self.events = "UI_only"
             self.cursor_state.set_active(False)
             self.events = "Active"
-
 
     def stop_server(self):
         # penser à bloquer le curseur ...
@@ -154,10 +168,11 @@ class logBox(Gtk.Label):
 
     def info(self, txt, delay):
         None
-#        if self.id != -1:
-#            GLib.source_remove(self.id)
+        if self.id != -1:
+            GLib.source_remove(self.id)
 #        self.set_text(txt)
-#        self.id = GLib.timeout_add_seconds(delay, self.clear)
+        GLib.idle_add(self.set_text, txt)
+        self.id = GLib.timeout_add_seconds(delay, self.clear)
 
     def clear(self):
         self.set_text("")
@@ -192,16 +207,19 @@ class webPilot(Gtk.Window):
         self.line += 1
 
 
-def close_with_threads(dummy):
+def close_threads_and_services(dummy):
     global exiting
     global win
     exiting = True
+    serv.disable_services()
     win.destroy()
     Gtk.main_quit()
 
 
 if __name__ == "__main__":
+    serv = Services()
     win = webPilot()
-    win.connect("destroy", close_with_threads)
+    print(serv.enable_services())
+    win.connect("destroy", close_threads_and_services)
     win.show_all()
     Gtk.main()

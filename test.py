@@ -1,31 +1,12 @@
-import sys
-import subprocess
+from pystemd.systemd1 import Unit
+from pystemd.systemd1 import Manager
 
 
-class ServiceMonitor(object):
+class Services(Manager):
+    def __init__(self, *args, **kwargs):
+        Manager.__init__(self, *args, **kwargs)
+        self.load()
 
-    def __init__(self, service):
-        self.service = service
 
-    def is_active(self):
-        """Return True if service is running"""
-        cmd = '/bin/systemctl status %s.service' % self.service
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf8')
-        stdout_list = proc.communicate()[0].split('\n')
-        for line in stdout_list:
-            if 'Active:' in line:
-                if '(running)' in line:
-                    return True
-        return False
-
-    def start(self):
-        cmd = '/bin/systemctl start %s.service' % self.service
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-        proc.communicate()
-
-if __name__ == '__main__':
-    # TODO: Show usage
-#    monitor = ServiceMonitor(sys.argv[1])
-    monitor = ServiceMonitor('flask-api')
-    if not monitor.is_active():
-        monitor.start()
+m = Services()
+print(m.Manager.ListUnitFiles())

@@ -7,8 +7,8 @@ import json
 import time
 import threading
 
-# Démarrer les watchdog pour chaque service actif au démarrage.
-#
+# Faire un peu de déco : logo EN. Virer barre ?
+# Régler le cas d'un service qui plante.
 
 serverdir = "/home/raphael/Sabayon/git/webPilot/servers"
 exiting = False
@@ -56,9 +56,16 @@ class server(Gtk.Box):
         self.pack_start(gtklab, False, False, 0)
         self.cursor_state = Gtk.Switch()
         self.cursor_state.connect("notify::active", self.changeserverstate)
-        self.cursor_state.set_active(self.service.ActiveState == b'active')
         self.pack_start(self.cursor_state, False, False, 0)
+        self.server_check()
         self.events = "Active"
+
+    def server_check(self):
+        if self.service.ActiveState == b'active':
+            self.AskedState = b'active'
+            self.cursor_state.set_active(True)
+            self.dog = True
+            threading.Thread(target=self.watchdog_surveil).start()
 
     def server_failed2run(self):
         self.logbox.info("Arrêt inatendu de : " + self.carac["name"], 30)
@@ -78,12 +85,13 @@ class server(Gtk.Box):
         self.events = "Active"
 
     def watchdog_surveil(self):
+        print("watchdog " + self.carac["service_name"] + " démarre")
         renew_surveil = True
         while renew_surveil:
             renew_surveil = False
             while self.dog and self.service.ActiveState == self.AskedState: # A modifier pour que le deactivating et inactive concordent.
                 time.sleep(self.dogdelay)
-                print("watchdog actif")
+                print("watchdog " + self.carac["service_name"])
                 if exiting or not self.dog:
                     return
             if self.service.ActiveState != b'active' and self.AskedState == b'active':
@@ -92,7 +100,6 @@ class server(Gtk.Box):
 #                self.server_failed2stop()
 
     def start_server(self):
-        print("hello")
         self.AskedState = b'active'
         self.service.Start(b'replace')
         self.logbox.info("Tentative de démarrage de : " + self.carac["name"], self.startdelay)
@@ -183,11 +190,11 @@ class webPilot(Gtk.Window):
         self.line = 0
         self.pb = Gtk.ProgressBar()
         self.grille = Gtk.Grid(row_spacing=8, column_spacing=10)
-        self.logbox = logBox(label="Test")
+        self.logbox = logBox(label="Bienvenue dans webPilot!")
 
     def __init__(self):
         self.defstuff()
-        Gtk.Window.__init__(self, title="WebPilot", border_width=10)
+        Gtk.Window.__init__(self, title="webPilot", border_width=10)
         self.add(self.grille)
         self.populate_servers(serverdir)
         self.addstuff()

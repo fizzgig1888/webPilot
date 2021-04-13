@@ -34,9 +34,9 @@ class Services(Manager):
 class server(Gtk.Box):
     events = "UI_only"
     dog = False
-    startdelay = 10
+    startdelay = 2.5
     stopdelay = 10
-    threshold = 0.2
+    threshold = 0.5
     dogdelay = 1
     AskedState = b'inactive'
     recordedPID = -1
@@ -105,10 +105,13 @@ class server(Gtk.Box):
         self.logbox.info("Tentative de démarrage de : " + self.carac["name"], self.startdelay)
         i = 0
         while i < self.startdelay/self.threshold and (self.service.ActiveState != b'active' or self.unit.MainPID != self.recordedPID or self.unit.MainPID == 0):
+            print("Activestate : " + str(self.service.ActiveState))
+            print("MainPID : " + str(self.unit.MainPID))
             time.sleep(self.threshold)
             self.recordedPID = self.unit.MainPID
             i += 1
-        if self.service.ActiveState == b'active':
+        # Modifier la condition ci-dessous.
+        if self.service.ActiveState == b'active' and self.unit.MainPID == self.recordedPID and self.unit.MainPID != 0:
             self.logbox.info("Démarrage réussi de : " + self.carac["name"], 1)
             self.events = "Active"
             self.dog = True

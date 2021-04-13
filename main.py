@@ -184,6 +184,7 @@ class webPilot(Gtk.Window):
     def __init__(self):
         self.defstuff()
         Gtk.Window.__init__(self, title='webPilot', border_width=10)
+        self.set_icon_from_file(os.path.join(iconsdir, 'wP.png'))
         self.add(self.grille)
         logo = svg2pixbuf(os.path.join(iconsdir, 'MEN.png'), height=129)
         self.populate_servers(confdir)

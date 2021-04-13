@@ -85,19 +85,15 @@ class server(Gtk.Box):
         self.events = "Active"
 
     def watchdog_surveil(self):
-        print("watchdog " + self.carac["service_name"] + " démarre")
         renew_surveil = True
         while renew_surveil:
             renew_surveil = False
             while self.dog and self.service.ActiveState == self.AskedState: # A modifier pour que le deactivating et inactive concordent.
                 time.sleep(self.dogdelay)
-                print("watchdog " + self.carac["service_name"])
                 if exiting or not self.dog:
                     return
             if self.service.ActiveState != b'active' and self.AskedState == b'active':
                 self.server_failed2run()
-#            elif self.AskedState == b'inactive' and self.service.ActiveState != b'inactive':
-#                self.server_failed2stop()
 
     def start_server(self):
         self.AskedState = b'active'
@@ -105,8 +101,6 @@ class server(Gtk.Box):
         self.logbox.info("Tentative de démarrage de : " + self.carac["name"], self.startdelay)
         i = 0
         while i < self.startdelay/self.threshold and (self.service.ActiveState != b'active' or self.unit.MainPID != self.recordedPID or self.unit.MainPID == 0):
-            print("Activestate : " + str(self.service.ActiveState))
-            print("MainPID : " + str(self.unit.MainPID))
             time.sleep(self.threshold)
             self.recordedPID = self.unit.MainPID
             i += 1
@@ -129,7 +123,6 @@ class server(Gtk.Box):
         self.logbox.info("Tentative d'arrêt de : " + self.carac["name"], self.stopdelay)
         i = 0
         while i < self.stopdelay/self.threshold and (self.service.ActiveState == b'deactivating' or self.unit.MainPID != 0):
-            print("looping : " + str(self.service.ActiveState))
             time.sleep(self.threshold)
             i += 1
         self.events = "UI_only"
@@ -138,7 +131,6 @@ class server(Gtk.Box):
             self.events = "Active"
         else:
             self.server_failed2stop()
-        print("stop_server fini")
 
     def svg2pixbuf(self, loc):
         width = 24
@@ -150,18 +142,11 @@ class server(Gtk.Box):
         image.set_from_pixbuf(pixbuf)
         return image
 
-    def debugging(self):
-        print(self.service.ActiveState)
-        print(self.service.SubState)
-        print(self.unit.MainPID)
-
     def changeserverstate(self, switch, gparam):
         if self.events == "Inactive":
             switch.set_active(self.recordedBtnState)
-            print("locked")
             return
         elif self.events == "UI_only":
-            print("no effect")
             return
         self.recordedBtnState = switch.get_active()
         self.events = "Inactive"
@@ -227,7 +212,7 @@ def close_threads_and_services(dummy):
 if __name__ == "__main__":
     serv = Services()
     win = webPilot()
-    print(serv.enable_services())
+    serv.enable_services()
     win.connect("destroy", close_threads_and_services)
     win.show_all()
     Gtk.main()
